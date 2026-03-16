@@ -1,4 +1,6 @@
+#==================================================================================================
 #Processing ternary alternations using Multinomial and Bayesian multinomial regression modeling 
+#==================================================================================================
 #reading data
 gen2<-read.csv("svsof.csv", sep=";", stringsAsFactors=TRUE)
 
@@ -27,7 +29,9 @@ gen2_f1<- genitive_type ~ por_length_words + pum_length_words +animacy +
   alpha_persistence_S + alpha_persistence_OF + beta_persistence_S + beta_persistence_OF + 
   TTR + por_thematicity_ptw + pum_thematicity_ptw + final_sibilancy + time
 
+##=====================================================================================
 ##testing multinomial regression with binary outcomes. Data: avsof.csv
+##=====================================================================================
 install.packages("nnet")
 library(nnet)
 multinom_model2 <- multinom(gen2_f1, data = gen2)
@@ -63,7 +67,26 @@ roc_obj<-roc(y_bin, probs)
 c_value<-auc(roc_obj)
 ###C-value=0.8767
 
-## comparing multinom () with glm () function
+###or
+library(Hmisc)
+Dxy <- somers2(probs, y_bin)["Dxy"]
+C_value <- (Dxy + 1) / 2
+C_value
+###C-value=0.876659
 
+## comparing multinom () with glm () function
+library(base)
+glm_model2<-glm(gen2_f1, family= binomial, data=gen2)
+summary(glm_model2)
+###C-value using somers2() function
+library(Hmisc)
+somers2(binomial()$linkinv(fitted(glm_model2)), as.numeric(gen2$genitive_type) -1)
+###C-value=0.876687
+
+## In conclusion, the two modeling perform almost similar. For the c-value calculation, the roc() function is recommended. 
+
+
+##=================================================================================================
 ##testing Bayesian multinomial regression analysis with diachronic data. Data: threewaygen.csv
+##=================================================================================================
 

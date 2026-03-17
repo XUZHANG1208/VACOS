@@ -89,4 +89,18 @@ somers2(binomial()$linkinv(fitted(glm_model2)), as.numeric(gen2$genitive_type) -
 ##=================================================================================================
 ##testing Bayesian multinomial regression analysis with diachronic data. Data: threewaygen.csv
 ##=================================================================================================
-
+## Bayesian binary logistic regression modeling 
+install.packages("brms")
+library(brms)
+library(bayesplot)
+brm2<-brm(gen2_f1,
+          data=gen2,
+          family=bernoulli(link="logit"),
+          warmup=500,
+          iter=2000,
+          chains=2,
+          cores=2,
+          seed=123)
+summary(brm2)
+prior_summary(brm2)
+plot(brm2)

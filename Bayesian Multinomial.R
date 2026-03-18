@@ -95,12 +95,12 @@ library(brms)
 library(bayesplot)
 brm2<-brm(gen2_f1,
           data=gen2,
-          family=bernoulli(link="logit"),
-          warmup=500,
-          iter=2000,
-          chains=2,
-          cores=2,
-          seed=123)
+          family=bernoulli(link="logit"), ## specifying the binary logistic regression modeling
+          warmup=500, ## the warmup iterations per chain, which is not used for inference 
+          iter=2000, ## real number of iterations per chain, including burn-in
+          chains=2, ## the number of independent MCMC chains
+          cores=2, ## the number of CPU cores used in parallel, usually the same as the number of chains
+          seed=123) ## the random seeds for reproducibility
 summary(brm2)
 prior_summary(brm2)
 plot(brm2)

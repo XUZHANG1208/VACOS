@@ -210,9 +210,8 @@ plot(brm3)
 
 ## Trying to model groups as random effects, using bayesian hierarchical multinomial logit regression
 gen3_f3<-genitive_type ~ por_length_words + pum_length_words +animacy + 
-  alpha_persistence_S + alpha_persistence_OF + alpha_persistence_NN + beta_persistence_S + 
-  beta_persistence_OF + beta_persistence_NN + TTR + por_thematicity_ptw + pum_thematicity_ptw + 
-  final_sibilancy + time+(1|register)
+  alpha_persistence_S + alpha_persistence_OF + alpha_persistence_NN + TTR + por_thematicity_ptw + pum_thematicity_ptw + 
+  final_sibilancy +(1|register) + (1|period)
 gen3_f3
 scale(gen3$por_length_words)
 scale(gen3$pum_length_words)
@@ -221,12 +220,12 @@ scale(gen3$time)
 
 priors <- c(
   # Intercepts
-  set_prior("normal(0, 5)", class = "Intercept", dpar = "muOF"),
-  set_prior("normal(0, 5)", class = "Intercept", dpar = "muS"),
+  set_prior("normal(0.8, 1)", class = "Intercept", dpar = "muOF"),
+  set_prior("normal(-0.7, 1)", class = "Intercept", dpar = "muS"),
   
   # Slopes
-  set_prior("normal(0, 2)", class = "b", dpar = "muOF"),
-  set_prior("normal(0, 2)", class = "b", dpar = "muS"),
+  set_prior("normal(0, 1)", class = "b", dpar = "muOF"),
+  set_prior("normal(0, 1)", class = "b", dpar = "muS"),
   
   # Random-effect SDs
   set_prior("student_t(3, 0, 1)", class = "sd", dpar = "muOF"),

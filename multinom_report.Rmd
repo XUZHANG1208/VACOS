@@ -1,30 +1,260 @@
 ---
-title: "multinomial_report"
+title: "multinomial_regression"
 author: "Xu Zhang"
-date: "2026-03-16"
-output: html_document
----
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    code_folding: hide 
+    numer_sections: true
+bibliography: references.bib
+date: "2026-03-16"   
+--- 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## Introduction to the test
+The test is divided into two sections. In the first section, I processed the binary genitive alternation (s- vs. of-genitives) using multinomial regression modeling, to see if multinomial modeling could be applied to binary alternations and how it is compared to binomial logit regression. This test is based on the dataset composed by N=4195 observations (N_s=831 and N_of=3364) used in @szmrecsanyi_toward_2016. Next, I adopted the Bayesian binary logistic regression analysis to if the standard and Bayesian logit regression models produce similar results. 
+In the second section, the three way genitive alternation dataset used in the same study is re-explored. Due to the ternary data structure, the test compared multinomial logit regression and Bayesian logit regression analysis. The comparison focuses on the performance of models in dealing with extremely sparse data. 
+```{r reading_data, echo=TRUE, eval=TRUE}
+gen2<-read.csv("svsof.csv", sep=";", stringsAsFactors=TRUE)
+gen3<-read.csv("threewaygen.csv", sep=";", stringsAsFactors=TRUE)
+summary(gen2)
+summary(gen3)
+
 ```
 
-## R Markdown
+```{r defining_factors, echo=TRUE, eval=TRUE}
+# defining factors for gen2
+gen2$genitive_type<-as.factor(gen2$genitive_type)
+gen2$por_length_words<-as.numeric(gen2$por_length_words)
+gen2$pum_length_words<-as.numeric(gen2$pum_length_words)
+gen2$animacy<-as.factor(gen2$animacy)
+gen2$alpha_persistence_S<-as.factor(gen2$alpha_persistence_S)
+gen2$alpha_persistence_OF<-as.factor(gen2$alpha_persistence_OF)
+gen2$alpha_persistence_NN<-as.factor(gen2$alpha_persistence_NN)
+gen2$beta_persistence_S<-as.factor(gen2$beta_persistence_S)
+gen2$beta_persistence_OF<-as.factor(gen2$beta_persistence_OF)
+gen2$beta_persistence_NN<-as.factor(gen2$beta_persistence_NN)
+gen2$TTR<-as.numeric(gen2$TTR)
+gen2$por_thematicity_ptw<-as.numeric(gen2$por_thematicity_ptw)
+gen2$pum_thematicity_ptw<-as.numeric(gen2$pum_thematicity_ptw)
+gen2$final_sibilancy<-as.factor(gen2$final_sibilancy)
+gen2$time<-as.numeric(gen2$time)
+gen2$register<-as.factor(gen2$register)
+gen2$period<-as.factor(gen2$period)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+#defining factors for gen3
+gen3$genitive_type<-as.factor(gen3$genitive_type)
+gen3$por_length_words<-as.numeric(gen3$por_length_words)
+gen3$pum_length_words<-as.numeric(gen3$pum_length_words)
+gen3$animacy<-as.factor(gen3$animacy)
+gen3$alpha_persistence_S<-as.factor(gen3$alpha_persistence_S)
+gen3$alpha_persistence_OF<-as.factor(gen3$alpha_persistence_OF)
+gen3$alpha_persistence_NN<-as.factor(gen3$alpha_persistence_NN)
+gen3$beta_persistence_S<-as.factor(gen3$beta_persistence_S)
+gen3$beta_persistence_OF<-as.factor(gen3$beta_persistence_OF)
+gen3$beta_persistence_NN<-as.factor(gen3$beta_persistence_NN)
+gen3$TTR<-as.numeric(gen3$TTR)
+gen3$por_thematicity_ptw<-as.numeric(gen3$por_thematicity_ptw)
+gen3$pum_thematicity_ptw<-as.numeric(gen3$pum_thematicity_ptw)
+gen3$final_sibilancy<-as.factor(gen3$final_sibilancy)
+gen3$time<-as.numeric(gen3$time)
+gen3$register<-as.factor(gen3$register)
+gen3$period<-as.factor(gen3$period)
 ```
 
-## Including Plots
+## Processing binary alternation
+### The multinom() modeling
+```{r s_multinom_modeling, echo=TRUE, eval=TRUE}
+#defining formula
+gen2_f<- genitive_type ~ por_length_words + pum_length_words +animacy + 
+  alpha_persistence_S + alpha_persistence_OF + beta_persistence_S + beta_persistence_OF + 
+  TTR + por_thematicity_ptw + pum_thematicity_ptw + final_sibilancy + time
+gen2_f
 
-You can also embed plots, for example:
+#model fitting-multinom
+library(nnet)
+multinom_gen2<-multinom(gen2_f, data=gen2)
+summary(multinom_gen2)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```
+In practice, multinomial model also processes binary responses but it reduces it to binomial logistic regression
+the specification over the formula of multinon() function: 
+The response should be a factor or a matrix with K columns, which will be interpreted as counts for each of K classes. A log-linear model is fitted, with coefficients zero for the first class. An offset can be included: it should be a numeric matrix with K columns if the response is either a matrix with K columns or a factor with K >= 2 classes, or a numeric vector for a response factor with 2 levels.
+Multinom () is efficient in processing binary alternations, but it does not compute the Wald z-values, P-values and CI.This is due to the fact that the authors discourage Wald test and the model deliberately avoids the computation of the second-derivative Hessian matrix, H. I guess it is to reduce the computation cost. 
+```{r s_multinom_evaluation, echo=TRUE, eval=TRUE, warning=FALSE}
+#p-values
+s <- summary(multinom_gen2)
+z <- s$coefficients / s$standard.errors
+p <- 2 * (1 - pnorm(abs(z)))
+p
+
+#model evaluation
+library(pROC)
+###converting probabilistis to log-odds for the non-reference outcome
+probs<-predict(multinom_gen2, type="probs")
+###identifying the reference level
+ref<-levels (gen2$genitive_type) [1]
+###calling the non-reference level
+cats<-levels(gen2$genitive_type) [2]
+###creating a binary outcome
+y_bin<-ifelse(gen2$genitive_type==cats, 1, 0)
+###computing ROC and AUC
+roc_obj<-roc(y_bin, probs)
+c_value<-auc(roc_obj)
+c_value
+
+#or
+library(Hmisc)
+Dxy <- somers2(probs, y_bin)["Dxy"]
+C_value <- (Dxy + 1) / 2
+C_value
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### standard binomial logit regression
+```{r binom_model, echo=TRUE, eval=TRUE}
+#modeling fitting-binom
+binom_gen2<-glm(gen2_f, family=binomial, data=gen2)
+summary(binom_gen2)
+
+```
+
+```{r binom_evaluation, echo=TRUE, eval=TRUE}
+c<-somers2(binomial()$linkinv(fitted(binom_gen2)), as.numeric(gen2$genitive_type) -1)
+c
+```
+
+In processing binary alternations, multinom() and glm() models produce almost the same estimates, p-values and c-values. The specification about multinom() modeling is that it doesn't calculate p-values automatically. So it is faster in estimating coefficients. Though not testes, both modeling allow interactions. However, it doesn't allow random effects. GLMER modeling allows the addition of random effects.  
+
+### Bayesian binomial logit regression
+```{r brm_binom, echo=TRUE, eval=TRUE}
+brm2<-readRDS("brm2.rds")
+brm2
+```
+plotting brm2
+```{r plotting_brm2, fig.cap="Figure1: Bayesian binomial logit analysis", fig.width=10, fig.height=8}
+plot(brm2)
+```
+
+When using the default priors, Bayesian binomial logit regression generates similar estimates as the glm() and multinom() modeling when processing the binary alternation. The difference is that Bayesian binomial model provides confidence interval to quantify the uncertainty associated with the estimation. Most CI don't include 0, except alpha_persistence_of, beta_persistence_of and TTR. This result confirms significance of coefficients generated by glm() and multinom() models, in which alpha_persistence_of and TTR are insignificant and beta_persistence_of is weakly significant. 
+Rhat represents how well the MCMC chains have converged to the same posterior distribution. In my brms() model, all Rhat values are all 1, which means chains are mixed well, there is no convergence issues, and the posterior distribution estimates are reliable. 
+Bulk_ESS measures how many independent samples are there in the bulk(center) of the posterior distribution. Bulk_ESS larger than 1000 represents that the chains explored the posterior effectively and the estimation of means and SDs are stable.
+Tail_ESS indicates how well the sampler explored the tail of the posterior distribution. Values larger than 1000 indicates through exploration and the 95% CI are trustworthy. 
+
+## Processing ternary alternation
+### Standard multinomial logit regression
+```{r multinom_gen3, echo=TRUE, eval=TRUE}
+summary(gen3$genitive_type)
+gen3_f1<-genitive_type ~ por_length_words + pum_length_words +animacy + 
+  alpha_persistence_S + alpha_persistence_OF + alpha_persistence_NN + beta_persistence_S + 
+  beta_persistence_OF + beta_persistence_NN + TTR + por_thematicity_ptw + pum_thematicity_ptw + 
+  final_sibilancy + time
+gen3_f1
+multinom_gen3<-multinom(gen3_f1, data=gen3)
+summary(multinom_gen3)
+library(knitr)
+multinom_gen3_df<-as.data.frame(t(coef(multinom_gen3)))
+kable(multinom_gen3_df, digits=5)
+```
+
+Multinomial logit modeling is very fast in generating estimation but it does not calculate p-values. Then I evaluate the multinom() model.
+
+```{r multinom_evaluation, echo=TRUE, eval=TRUE}
+# Convert probabilities to log-odds for each non-baseline category
+probs <- predict(multinom_gen3, type = "probs")
+library(pROC)
+# Identify the reference category
+ref <- levels(gen3$genitive_type)[1]   # should be "NN" in the setup
+# List of non-reference categories
+cats <- setdiff(levels(gen3$genitive_type), ref)
+# Compute C-values for each internal logit
+C_values <- sapply(cats, function(cat) {
+  ## Binary outcome: 1 = cat, 0 = ref
+  y_bin <- ifelse(gen3$genitive_type == cat, 1,
+                  ifelse(gen3$genitive_type == ref, 0, NA))
+  ## Remove rows belonging to other categories
+  keep <- !is.na(y_bin)
+  roc_obj <- roc(y_bin[keep], probs[keep, cat])
+  auc(roc_obj)
+})
+C_values
+```
+The inner binomial models only moderately discriminate, with c-values equal or less than 0.8. Tranditional multinomial model does not allow random effects. The data is extremely sparse with 470 NN, 2351 OF and only 106 S. The extreme asymmetry leads to less stable estimation for the standard multinom() model. This is not ideal. Let's try Bayesian and see how it handles sparse data. 
+
+### Bayesian multinomial modeling
+
+```{r brm3, echo=TRUE, eval=TRUE}
+#using default prior, no random effects
+brm3<-readRDS("brm3.rds")
+brm3
+```
+Again, using default priors will generate results identical to estimates of standard multinomial logit regression. Posteriors are effective given that Rhat values are 1 and ESS values all above 1000. However, the model fail to find important predictors of S-genitive, because most CIs of s-genitive posterior estimation include 0, which means the model can't decide if the effect is strictly positive or negative given the data. CI indicates given the data and the model, there is 95% probability that the true parameter lies within the interval. This is visualized in the plot
+```{r brm3_plot, echo=TRUE, eval=TRUE, fig.cap="Bayesian multinom results", fig.width=10, fig.height=8}
+plot(brm3)
+```
+
+This situation is likely caused by the lack of data for s-genitive. So I reduced predictors, but the model is not much improved in predicting the use of s-genitive. 
+Then, I set tighter priors. The model improved slightly. 
+```{r improved, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_1<-readRDS("brm3_1.rds")
+brm3_1
+plot(brm3_1)
+```
+
+
+Next step: tighter priors plus random effects -- random effects significantly improves model performance
+
+### Bayesain multinomial logit regression with random effects
+#### register
+```{r register, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+#single random effects
+brm3_random_r<-readRDS("brm3_random_r.rds")
+brm3_random_r
+plot(brm3_random_r)
+```
+
+#### filename
+```{r filename, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_random_f<-readRDS("brm3_random_f.rds")
+brm3_random_f
+plot(brm3_random_f)
+```
+
+#### possessor_head_noun
+```{r por_head, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_random_pr<-readRDS("brm3_random_pr.rds")
+brm3_random_pr
+plot(brm3_random_pr)
+```
+
+
+#### possessum_head_noun
+```{r pum_head, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_random_pm<-readRDS("brm3_random_pm.rds")
+brm3_random_pm
+plot(brm3_random_pm)
+```
+
+#### possessor+possessum head noun
+```{r both_head, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_random_head<-readRDS("brm3_random_head.rds")
+brm3_random_head
+plot(brm3_random_head)
+```
+
+#### possessor+possessum head noun+register
+```{r 3_random, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
+brm3_random_head_r<-readRDS("brm3_random_head_r.rds")
+brm3_random_head_r
+plot(brm3_random_head_r)
+```
+
+
+above models perform well without divergent transitions. While two random effect combinations: register+filename, and four random effects together, gave divergent transitions.
+Among successful modeling, the combination of possessor and possessum head nouns as random effects work the best in terms of identifying the optimal effective predictors of of- and s-genitives compared with NN genitives. 
+
+## Discussion
+1. Bayesian multinomial logit regression is also limited in processing sparse data. Setting proper priors is the key in modeling reliable estimates. 
+2. Bayesiam multinomial logit regression allows random effects, and the optimal combination of random effects could effectively improve model performance. 
+3. Bayesian multinomial logit regression is computationally expensive but still acceptable. 

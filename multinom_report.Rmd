@@ -13,8 +13,8 @@ date: "2026-03-16"
 --- 
 
 ## Introduction to the test
-The test is divided into two sections. In the first section, I processed the binary genitive alternation (s- vs. of-genitives) using multinomial regression modeling, to see if multinomial modeling could be applied to binary alternations and how it is compared to binomial logit regression. This test is based on the dataset composed by N=4195 observations (N_s=831 and N_of=3364) used in @szmrecsanyi_toward_2016. Next, I adopted the Bayesian binary logistic regression analysis to if the standard and Bayesian logit regression models produce similar results. 
-In the second section, the three way genitive alternation dataset used in the same study is re-explored. Due to the ternary data structure, the test compared multinomial logit regression and Bayesian logit regression analysis. The comparison focuses on the performance of models in dealing with extremely sparse data. 
+The test is divided into two sections. In the first section, I processed the binary genitive alternation (s- vs. of-genitives) using multinomial regression modeling to see if multinomial modeling could be applied to binary alternations and how it compares to binomial logit regression. This test is based on the dataset composed of N=4195 observations (N_s=831 and N_of=3364) used in @szmrecsanyi_toward_2016. Next, I used Bayesian binary logistic regression to determine whether the standard and Bayesian logit regression models yielded similar results.
+In the second section, the three-way genitive alternation dataset used in the same study is re-explored. Due to the ternary data structure, the test compared multinomial logit and Bayesian logit regression. The comparison focuses on the performance of models in dealing with extremely sparse data.	          
 ```{r reading_data, echo=TRUE, eval=TRUE}
 gen2<-read.csv("svsof.csv", sep=";", stringsAsFactors=TRUE)
 gen3<-read.csv("threewaygen.csv", sep=";", stringsAsFactors=TRUE)
@@ -78,10 +78,9 @@ multinom_gen2<-multinom(gen2_f, data=gen2)
 summary(multinom_gen2)
 
 ```
-In practice, multinomial model also processes binary responses but it reduces it to binomial logistic regression
-the specification over the formula of multinon() function: 
-The response should be a factor or a matrix with K columns, which will be interpreted as counts for each of K classes. A log-linear model is fitted, with coefficients zero for the first class. An offset can be included: it should be a numeric matrix with K columns if the response is either a matrix with K columns or a factor with K >= 2 classes, or a numeric vector for a response factor with 2 levels.
-Multinom () is efficient in processing binary alternations, but it does not compute the Wald z-values, P-values and CI.This is due to the fact that the authors discourage Wald test and the model deliberately avoids the computation of the second-derivative Hessian matrix, H. I guess it is to reduce the computation cost. 
+In practice, the multinomial model also processes binary responses, but it reduces it to binomial logistic regression
+Multinom () is efficient at processing binary alternations, but it does not compute Wald z-values, P-values and CIs. This is because the authors discourage the Wald test and the model deliberately avoids computing the second-derivative Hessian matrix, H. It is to reduce the computation cost.
+
 ```{r s_multinom_evaluation, echo=TRUE, eval=TRUE, warning=FALSE}
 #p-values
 s <- summary(multinom_gen2)
@@ -125,7 +124,7 @@ c<-somers2(binomial()$linkinv(fitted(binom_gen2)), as.numeric(gen2$genitive_type
 c
 ```
 
-In processing binary alternations, multinom() and glm() models produce almost the same estimates, p-values and c-values. The specification about multinom() modeling is that it doesn't calculate p-values automatically. So it is faster in estimating coefficients. Though not testes, both modeling allow interactions. However, it doesn't allow random effects. GLMER modeling allows the addition of random effects.  
+In processing binary alternations, multinom() and glm() models produce almost the same estimates, p-values and c-values. The multinom() modeling doesn't calculate p-values automatically, so it is faster in estimating coefficients. Both models allow interactions. However, standard multinom() doesn't allow random effects. GLMER modeling allows the addition of random effects.   
 
 ### Bayesian binomial logit regression
 ```{r brm_binom, echo=TRUE, eval=TRUE}
@@ -137,10 +136,11 @@ plotting brm2
 plot(brm2)
 ```
 
-When using the default priors, Bayesian binomial logit regression generates similar estimates as the glm() and multinom() modeling when processing the binary alternation. The difference is that Bayesian binomial model provides confidence interval to quantify the uncertainty associated with the estimation. Most CI don't include 0, except alpha_persistence_of, beta_persistence_of and TTR. This result confirms significance of coefficients generated by glm() and multinom() models, in which alpha_persistence_of and TTR are insignificant and beta_persistence_of is weakly significant. 
-Rhat represents how well the MCMC chains have converged to the same posterior distribution. In my brms() model, all Rhat values are all 1, which means chains are mixed well, there is no convergence issues, and the posterior distribution estimates are reliable. 
-Bulk_ESS measures how many independent samples are there in the bulk(center) of the posterior distribution. Bulk_ESS larger than 1000 represents that the chains explored the posterior effectively and the estimation of means and SDs are stable.
-Tail_ESS indicates how well the sampler explored the tail of the posterior distribution. Values larger than 1000 indicates through exploration and the 95% CI are trustworthy. 
+When using the default priors, Bayesian binomial logit regression produces estimates similar to those from glm() and multinom() for binary alternation. The difference is that the Bayesian binomial model provides a credible interval that quantifies the uncertainty associated with the estimate. Most CIs don't include 0, except alpha_persistence_of, beta_persistence_of, and TTR. This result confirms the significance of coefficients generated by glm() and multinom() models, with alpha_persistence_of and TTR being insignificant, and beta_persistence_of being weakly significant. 
+Rhat represents how well the MCMC chains have converged to the same posterior distribution. In my brms() posteriors, all Rhat values are all 1, which means chains are mixed well, there is no convergence issues, and the posterior distribution estimates are reliable. 
+Bulk_ESS measures how many independent samples are in the bulk(center) of the posterior distribution. Bulk_ESS larger than 1000 represents that the chains explored the posterior effectively, and the estimation of means and SDs is stable.
+Tail_ESS indicates how well the sampler explored the tail of the posterior distribution. Values larger than 1000 indicate that, through exploration, the 95% CI is trustworthy.
+
 
 ## Processing ternary alternation
 ### Standard multinomial logit regression
@@ -158,7 +158,7 @@ multinom_gen3_df<-as.data.frame(t(coef(multinom_gen3)))
 kable(multinom_gen3_df, digits=5)
 ```
 
-Multinomial logit modeling is very fast in generating estimation but it does not calculate p-values. Then I evaluate the multinom() model.
+Multinomial logit modeling is very fast in estimation but it does not calculate p-values. Then I evaluate the multinom() model.
 
 ```{r multinom_evaluation, echo=TRUE, eval=TRUE}
 # Convert probabilities to log-odds for each non-baseline category
@@ -180,7 +180,7 @@ C_values <- sapply(cats, function(cat) {
 })
 C_values
 ```
-The inner binomial models only moderately discriminate, with c-values equal or less than 0.8. Tranditional multinomial model does not allow random effects. The data is extremely sparse with 470 NN, 2351 OF and only 106 S. The extreme asymmetry leads to less stable estimation for the standard multinom() model. This is not ideal. Let's try Bayesian and see how it handles sparse data. 
+The inner binomial models only moderately discriminate, with c-values equal to or less than 0.8. The traditional multinomial model does not allow random effects. The data is extremely sparse with 470 NN, 2351 OF and only 106 S. The extreme asymmetry leads to less stable estimation for the standard multinom() model. This is not ideal. Let's try Bayesian and see how it handles sparse data.
 
 ### Bayesian multinomial modeling
 
@@ -189,23 +189,28 @@ The inner binomial models only moderately discriminate, with c-values equal or l
 brm3<-readRDS("brm3.rds")
 brm3
 ```
-Again, using default priors will generate results identical to estimates of standard multinomial logit regression. Posteriors are effective given that Rhat values are 1 and ESS values all above 1000. However, the model fail to find important predictors of S-genitive, because most CIs of s-genitive posterior estimation include 0, which means the model can't decide if the effect is strictly positive or negative given the data. CI indicates given the data and the model, there is 95% probability that the true parameter lies within the interval. This is visualized in the plot
+
+Again, using default priors will generate results identical to those from standard multinomial logit regression estimates. Posteriors are effective given that Rhat values are 1 and ESS values all above 1000. However, the model cannot identify important predictors of S-genitive because most CIs for the S-genitive posterior include 0, meaning the model can't decide whether the effect is strictly positive or negative given the data. CI indicates that, given the data and the model, there is 95% probability that the true parameter lies within the interval. 
+
+
 ```{r brm3_plot, echo=TRUE, eval=TRUE, fig.cap="Bayesian multinom results", fig.width=10, fig.height=8}
 plot(brm3)
 ```
 
-This situation is likely caused by the lack of data for s-genitive. So I reduced predictors, but the model is not much improved in predicting the use of s-genitive. 
-Then, I set tighter priors. The model improved slightly. 
+
+Then, I set tighter priors according to the proportion of responses in the dataset. Also, i removed some weak coefficients in the previous model.
+
 ```{r improved, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
 brm3_1<-readRDS("brm3_1.rds")
 brm3_1
 plot(brm3_1)
 ```
 
-
-Next step: tighter priors plus random effects -- random effects significantly improves model performance
+The model is honest about the estimate of coefficients, given the data and prior. So we need to accept that the model can't decide the estimates of some coefficients within the 95% probability. This could be caused by the sparse data or the fact that those factors being genuinely weak. 
 
 ### Bayesain multinomial logit regression with random effects
+This is a type of Bayesian hierarchical model, which takes random effects as group level parameters. The model accounts for variance at the group level. By doing so, the model stabilizes the estimation of fixed effects by absorbing the group level variation. In addition, It avoids overfitting or extreme estimates for small groups through partial pooling. Groups with little data get estimates close to the overall mean. 
+
 #### register
 ```{r register, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
 #single random effects
@@ -255,6 +260,32 @@ above models perform well without divergent transitions. While two random effect
 Among successful modeling, the combination of possessor and possessum head nouns as random effects work the best in terms of identifying the optimal effective predictors of of- and s-genitives compared with NN genitives. 
 
 ## Discussion
-1. Bayesian multinomial logit regression is also limited in processing sparse data. Setting proper priors is the key in modeling reliable estimates. 
-2. Bayesiam multinomial logit regression allows random effects, and the optimal combination of random effects could effectively improve model performance. 
-3. Bayesian multinomial logit regression is computationally expensive but still acceptable. 
+### On modeling
+1.	Processing binary alternation
+
+•	The glm(), multinom() and brm() (binomial with default priors) yield similar estimation. 
+
+•	The multinom() is faster if we don’t need p-values.
+
+•	The brm() model shows uncertainties associated with estimation, and it allows priors when data are sparse.
+
+2.	Processing ternary alternation
+
+1)	Both multinom() and brm() (categorical) models work efficiently. In general, brm() model is better than multinon() model, for the following reasons:
+
+•	Multinom() doesn’t allow random effects. If the model doesn’t perform well, the solutions are limited to sampling and parameter
+setting. While the brm() model has more ways to improve modeling, including prior, sampling and parameter manipulation.
+
+•	Most importantly, the brm() model is better than the multinon() model because it allows random effects, which account for the variation beyond the focus of the studies at issue.
+
+2)	However, brm() model is not that powerful. It is also influenced by data sparseness. Prior setting is crucial!
+
+note: i didn't include interaction in the tests because VACOS does not model interactions. 
+
+### Next
+1. Exploring priors in Bayesian multinomial logit regression.
+
+2. Sample size given a certain number of predictors in brm() multinomial logit regression -- taking reference from standard logit modeling, e.g., (Pate et al. 2023).
+
+3. How do we include unreliable estimates in the VACOS workflow? Can we take the effect size of those with CIs cross 0 as 0, meaning in those dimensions we don't have values for the calculation of Euclidean distance?
+

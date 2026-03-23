@@ -8,7 +8,7 @@ output:
     toc_float: true
     code_folding: hide 
     numer_sections: true
-bibliography: references.bib
+bibliography: VACOS.bib
 date: "2026-03-16"   
 --- 
 
@@ -209,7 +209,7 @@ plot(brm3_1)
 The model is honest about the estimate of coefficients, given the data and prior. So we need to accept that the model can't decide the estimates of some coefficients within the 95% probability. This could be caused by the sparse data or the fact that those factors being genuinely weak. 
 
 ### Bayesain multinomial logit regression with random effects
-This is a type of Bayesian hierarchical model, which takes random effects as group level parameters. The model accounts for variance at the group level. By doing so, the model stabilizes the estimation of fixed effects by absorbing the group level variation. In addition, It avoids overfitting or extreme estimates for small groups through partial pooling. Groups with little data get estimates close to the overall mean. 
+This is a type of Bayesian hierarchical model, which takes random effects as group level parameters @nalborczyk_introduction_2019. The model accounts for variance at the group level. By doing so, the model stabilizes the estimation of fixed effects by absorbing the group level variation. In addition, It avoids overfitting or extreme estimates for small groups through partial pooling. Groups with little data get estimates close to the overall mean. 
 
 #### register
 ```{r register, echo=TRUE, eval=TRUE, fig.width=10, fig.height=8}
@@ -285,7 +285,7 @@ note: i didn't include interaction in the tests because VACOS does not model int
 ### Next
 1. Exploring priors in Bayesian multinomial logit regression.
 
-2. Sample size given a certain number of predictors in brm() multinomial logit regression -- taking reference from standard logit modeling, e.g., (Pate et al. 2023).
+2. Sample size given a certain number of predictors in brm() multinomial logit regression -- taking reference from standard logit modeling, e.g., (Pate et al. 2023). Enlarging the data for ternary alternation to 4000-5000 observations, and responses should be more balanced.
 
-3. How do we include unreliable estimates in the VACOS workflow? Can we take the effect size of those with CIs cross 0 as 0, meaning in those dimensions we don't have values for the calculation of Euclidean distance?
+3. How do we include unreliable estimates in the VACOS workflow? Can we take the effect size of those with CIs cross 0 as 0 (inspired by PMI - PPMI), meaning in those dimensions we don't have values for the calculation of Euclidean distance? Or, we give weight to the estimates according to CIs?
 

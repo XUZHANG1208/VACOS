@@ -257,7 +257,14 @@ plot(brm3_random_head_r)
 
 
 above models perform well without divergent transitions. While two random effect combinations: register+filename, and four random effects together, gave divergent transitions.
-Among successful modeling, the combination of possessor and possessum head nouns as random effects work the best in terms of identifying the optimal effective predictors of of- and s-genitives compared with NN genitives. 
+Yet, we don't know which model is the best, so we evaluate model performance according to the models' predictive abilities. Model predictive ability is indicated by Bayesian leave-one-out cross-validation (LOO-CV) using the LOO() function. 
+```{r model_evaluation, echo=TRUE, eval=TRUE, warning=FALSE, cache=TRUE}
+library(loo)
+model_eval<-loo(brm3_random_r, brm3_random_f, brm3_random_pr, brm3_random_pm, brm3_random_head, brm3_random_head_r, moment_match = TRUE)
+model_eval
+```
+
+Among successful modeling, the combination of possessor head, possessum head and register as random effects work the best in terms of predictive ability (the lowest LOOIC). But due to the lack of s-genetive across all groups, even the loo() results are unstable: we get several Pareto K larger than 0.7. But this model is the best  
 
 ## Discussion
 ### On modeling
@@ -283,9 +290,9 @@ setting. While the brm() model has more ways to improve modeling, including prio
 note: i didn't include interaction in the tests because VACOS does not model interactions. 
 
 ### Next
-1. Exploring priors in Bayesian multinomial logit regression.
+1. Exploring priors in Bayesian multinomial logit regression. Can I use intercept and slope values for the same alternation from existing synchronic studies? 
 
 2. Sample size given a certain number of predictors in brm() multinomial logit regression -- taking reference from standard logit modeling, e.g., (Pate et al. 2023). Enlarging the data for ternary alternation to 4000-5000 observations, and responses should be more balanced.
 
-3. How do we include unreliable estimates in the VACOS workflow? Can we take the effect size of those with CIs cross 0 as 0 (inspired by PMI - PPMI), meaning in those dimensions we don't have values for the calculation of Euclidean distance? Or, we give weight to the estimates according to CIs?
+3. How do we include unreliable estimates in the VACOS workflow? Can we take the effect size of those with CIs cross 0 as 0 (inspired by PMI - PPMI), meaning in those dimensions we don't have values for the calculation of Euclidean distance? But for extreme cases like s- vs. NN genitives, there are too few meaningful effects according to the model. If two models return the same distribution, then the two varieties are the same measured by line2? Or, we give weight to the estimates according to CIs?
 

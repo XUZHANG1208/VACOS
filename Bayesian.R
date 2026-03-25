@@ -29,7 +29,8 @@ summary(brm3)
 saveRDS(brm3, "brm3.rds")
 prior_summary(brm3)
 
-## Bayesian multinom with random effect
+## Bayesian multinom and Brm with random effect
+###brm3 with tighter priors and reduced predictors
 gen3_f2<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time
 gen3_f2
@@ -60,12 +61,12 @@ summary(brm3_1)
 saveRDS(brm3_1, "brm3_1.rds")
 
 
-##adding random effects-register
+###adding random effects-register
 gen3_f3<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|register)
 gen3_f3
 
-##setting tighter priors
+###setting tighter priors
 priors <- c(
   # Intercepts
   set_prior("normal(0.8, 1)", class = "Intercept", dpar = "muOF"),
@@ -85,6 +86,7 @@ brm3_random_r <- brm(
   gen3_f3,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),##For model evaluation using the loo() function
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -94,9 +96,10 @@ brm3_random_r <- brm(
   control = list(adapt_delta = 0.95)
 )
 summary(brm3_random_r)
+loo(brm3_random_r, moment_match=TRUE)#model evaluation
 saveRDS(brm3_random_r, "brm3_random_r.rds")
 
-##adding random effects- filename
+###adding random effects- filename
 gen3$filename<-as.factor(gen3$filename)
 gen3_f4<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|filename)
@@ -106,6 +109,7 @@ brm3_random_f <- brm(
   gen3_f4,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE), ##For model evaluation using the loo() function
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -115,9 +119,10 @@ brm3_random_f <- brm(
   control = list(adapt_delta = 0.95)
 )
 summary(brm3_random_f)
+loo(brm3_random_f, moment_match=TRUE)
 saveRDS(brm3_random_f, "brm3_random_f.rds")
 
-##adding random effects-possessor head noun
+###adding random effects-possessor head noun
 gen3$por_head_noun<-as.factor(gen3$por_head_noun)
 gen3_f5<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|por_head_noun)
@@ -127,6 +132,7 @@ brm3_random_pr <- brm(
   gen3_f5,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -137,9 +143,10 @@ brm3_random_pr <- brm(
 )
 
 summary(brm3_random_pr)
+loo(brm3_random_pr, moment_match=TRUE)
 saveRDS(brm3_random_pr, "brm3_random_pr.rds")
 
-##adding random effects-possessum head noun
+###adding random effects-possessum head noun
 gen3$pum_head_noun<-as.factor(gen3$pum_head_noun)
 gen3_f6<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|pum_head_noun)
@@ -148,6 +155,7 @@ brm3_random_pm <- brm(
   gen3_f6,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -158,9 +166,10 @@ brm3_random_pm <- brm(
 )
 
 summary(brm3_random_pm)
+loo(brm3_random_pm, moment_match = TRUE)
 saveRDS(brm3_random_pm, "brm3_random_pm.rds")
 
-#adding random effects-possessum +possessor head noun
+###adding random effects-possessum +possessor head noun
 gen3_f7<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|pum_head_noun)+ (1|por_head_noun)
 gen3_f7
@@ -169,6 +178,7 @@ brm3_random_head <- brm(
   gen3_f7,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -178,10 +188,11 @@ brm3_random_head <- brm(
   control = list(adapt_delta = 0.95)
 )
 
+loo(brm3_random_head, moment_match=TRUE)
 summary(brm3_random_head)
 saveRDS(brm3_random_head, "brm3_random_head.rds")
 
-#adding random effects-possessum +possessor head noun +register
+###adding random effects-possessum +possessor head noun +register
 gen3_f8<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|pum_head_noun)+ (1|por_head_noun) +(1|register)
 gen3_f8
@@ -190,6 +201,7 @@ brm3_random_head_r <- brm(
   gen3_f8,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),
   prior  = priors,
   chains = 2,
   iter   = 4000,
@@ -198,11 +210,11 @@ brm3_random_head_r <- brm(
   seed   = 123,
   control = list(adapt_delta = 0.95)
 )
-
+loo(brm3_random_head_r, moment_match=TRUE)
 summary(brm3_random_head_r)
 saveRDS(brm3_random_head_r, "brm3_random_head_r.rds")
 
-#adding random effects-possessum +possessor head noun +register+filename
+###adding random effects-possessum +possessor head noun +register+filename
 gen3_f9<-genitive_type ~ por_length_words + pum_length_words +animacy + TTR + 
   final_sibilancy + time + (1|pum_head_noun)+ (1|por_head_noun) +(1|register)+(1|filename)
 gen3_f9
@@ -211,6 +223,7 @@ brm3_random4 <- brm(
   gen3_f9,
   data   = gen3,
   family = categorical(),
+  save_pars = save_pars(all = TRUE),
   prior  = priors,
   chains = 2,
   iter   = 4000,
